@@ -23,11 +23,11 @@ def read_pdf(pdf):
 
     return text
 
-def divide_chunk(words, chunk_size=500):
+def divide_chunk(words, chunk_size=500, overlap=50):
     chunks = []
 
     # Loop through the list of words, jumping by chunk_size each time
-    for i in range(0, len(words), chunk_size):
+    for i in range(0, len(words), chunk_size - overlap):
         chunk_words = words[i : i + chunk_size]
         chunks.append(' '.join(chunk_words)) 
 
@@ -47,17 +47,32 @@ def get_collection():
 
     return collection
 
-def store_chromadb(embeddings, chunks):
+def store_chromadb(embeddings, chunks, pdf_name):
 
     collection = get_collection()
     ids = [str(uuid.uuid4()) for _ in range(len(chunks))]
 
+    metadatas = [{
+        "source": pdf_name,
+        "chunk": i
+    }
+    for i in range(len(chunks))
+    ]
 
-    collection.add(
-        ids= ids,
-        embeddings=embeddings,
-        documents=chunks
+    existing = collection.get(
+        where= {"source":pdf_name}
     )
+
+    if (existing["ids"]):
+        print("Pdf already exist")
+
+    else:
+        collection.add(
+            ids= ids,
+            embeddings=embeddings,
+            documents=chunks,
+            metadatas=metadatas
+        )
 
     return collection
 
@@ -99,8 +114,21 @@ def generate_answer(question):
         ]
     )
 
-    return response
+    return response["message"]["content"]
 
+def ask_question():
+
+    while True:
+        question = input(str("Ask what you want? S to stop"))
+
+        if (question == "S"):
+            print("Ending session")
+            break
+        
+        else: 
+            response = generate_answer(question)
+            print(response)
+            print("\n\n")
 
 
 # text = read_pdf("ml notes.pdf")
