@@ -88,45 +88,49 @@ def question_retrieval(question):
 
     return results
 
-def generate_answer(question):
+def generate_answer(question, history):
     result = question_retrieval(question)
 
     context = "\n\n".join(result["documents"][0])
 
-    prompt = f"""
+    messages = history.copy()
+
+   
+
+    messages.append({
+        "role":"user",
+        "content" : f"""
 
     context: {context},
 
-    question: {question},
+    question: {question}
 
-    answer: 
-
-    """
+    """})
 
     response = chat(
         model="llama3.2",
-        messages=[
-            {
-            "role":"user",
-            "content":prompt
-            }
+        messages=messages
             
-        ]
     )
 
     return response["message"]["content"]
 
 def ask_question():
+    history = []
 
     while True:
         question = input(str("Ask what you want? S to stop"))
 
-        if (question == "S"):
+
+        if (question.upper() == "S"):
             print("Ending session")
             break
         
         else: 
-            response = generate_answer(question)
+            response = generate_answer(question, history)
+            history.append({"role":"user", "content":question})
+            history.append({"role":"assistant", "content":response})            
+
             print(response)
             print("\n\n")
 

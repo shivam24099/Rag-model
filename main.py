@@ -8,7 +8,7 @@ import Rag
 # embeddings = Rag.embedd_text(chunks)
 
 # Rag.store_chromadb(embeddings, chunks, "ml notes")
-# Rag.ask_question()
+Rag.ask_question()
 
 
 
