@@ -3,10 +3,14 @@ from sentence_transformers import SentenceTransformer
 import chromadb
 import uuid
 from ollama import chat
+import os
+
+def clear():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
-#notes: 
+#notes: pipeline 
 """
             pdf -> text extraction -> chunks creates -> embedding chunks (turing into vectors) -> storing into chromadb
 """
@@ -88,8 +92,33 @@ def question_retrieval(question):
 
     return results
 
+
+"""
+ for a better working of chat history we try:
+
+        question -> llama creates a suitable prompt -> prompt retrieve from DB -> llama generate an answer -> print on console
+
+    
+"""
 def generate_answer(question, history):
-    result = question_retrieval(question)
+
+    user_messages = [
+        msg["content"]
+        for msg in history
+        if msg["role"] == "user"
+    ]
+
+    last_user_questions = (
+        user_messages[-3:]
+        if user_messages
+        else ""
+    )
+    retrieval_query = f"""
+        {last_user_questions}
+
+        {question}
+    """
+    result = question_retrieval(retrieval_query)
 
     context = "\n\n".join(result["documents"][0])
 
@@ -103,7 +132,7 @@ def generate_answer(question, history):
 
     context: {context},
 
-    question: {question}
+    question: {retrieval_query}
 
     """})
 
@@ -128,12 +157,22 @@ def ask_question():
         
         else: 
             response = generate_answer(question, history)
-            history.append({"role":"user", "content":question})
-            history.append({"role":"assistant", "content":response})            
+
+            history.append({
+                "role":"user",
+                "content":question
+                })
+            
+            history.append({
+                "role":"assistant",
+                "content":response
+                })            
 
             print(response)
             print("\n\n")
 
+    clear()
+    
 
 # text = read_pdf("ml notes.pdf")
 # words = text.split() # this is the actual text
