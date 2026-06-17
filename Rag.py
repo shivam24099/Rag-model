@@ -98,8 +98,35 @@ def question_retrieval(question):
 
         question -> llama creates a suitable prompt -> prompt retrieve from DB -> llama generate an answer -> print on console
 
+        but we need a query writing as working with the above will give relevant answer for the certain number of queries
+
     
 """
+
+def rewrite_query(question, history):
+    prompt = f"""
+            rewrite the current question so it is self-contained
+            
+            conversation:{history}
+            
+            current question: {question}   
+
+            return only the re written question"""
+    
+    response = chat(
+        model="llama3.2",
+        messages=[{
+            "role":"user",
+            "content":prompt
+        }]
+    )
+    return response["message"]["content"]
+
+
+
+
+
+
 def generate_answer(question, history):
 
     user_messages = [
@@ -118,7 +145,14 @@ def generate_answer(question, history):
 
         {question}
     """
-    result = question_retrieval(retrieval_query)
+
+    query = rewrite_query(question, history)
+    result = question_retrieval(query)
+    print("\nREWRITTEN QUERY:")
+    print(query)
+
+    print("\n HISTORY:")
+    print(history)
 
     context = "\n\n".join(result["documents"][0])
 
@@ -129,20 +163,25 @@ def generate_answer(question, history):
     messages.append({
         "role":"user",
         "content" : f"""
+        use provided context to answer the question
 
     context: {context},
 
-    question: {retrieval_query}
+    question: {query}
 
-    """})
+    answer:
+    """
+    })
 
     response = chat(
         model="llama3.2",
         messages=messages
             
     )
+    print("ANSWER:", response["message"]["content"])
 
     return response["message"]["content"]
+
 
 def ask_question():
     history = []
@@ -169,7 +208,6 @@ def ask_question():
                 })            
 
             print(response)
-            print("\n\n")
 
     clear()
     
