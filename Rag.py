@@ -111,6 +111,9 @@ def rewrite_query(question, history):
             
             current question: {question}   
 
+            Use the most recent topic when resolving references such as:
+            it, its, this, that, first component, second component.
+
             return only the re written question"""
     
     response = chat(
@@ -121,10 +124,6 @@ def rewrite_query(question, history):
         }]
     )
     return response["message"]["content"]
-
-
-
-
 
 
 def generate_answer(question, history):
@@ -148,18 +147,11 @@ def generate_answer(question, history):
 
     query = rewrite_query(question, history)
     result = question_retrieval(query)
-    print("\nREWRITTEN QUERY:")
-    print(query)
-
-    print("\n HISTORY:")
-    print(history)
 
     context = "\n\n".join(result["documents"][0])
 
     messages = history.copy()
-
    
-
     messages.append({
         "role":"user",
         "content" : f"""
@@ -178,7 +170,6 @@ def generate_answer(question, history):
         messages=messages
             
     )
-    print("ANSWER:", response["message"]["content"])
 
     return response["message"]["content"]
 
@@ -205,11 +196,22 @@ def ask_question():
             history.append({
                 "role":"assistant",
                 "content":response
-                })            
+                })  
+            print("\n\n")          
 
             print(response)
 
     clear()
+
+"""
+
+Some of the limitations with the query_rewritting:
+
+        it sometimes may answer out of context
+        topic switch may go imperfect
+        long conversation may result in topic diversion which the system is poor with
+
+"""
     
 
 # text = read_pdf("ml notes.pdf")
