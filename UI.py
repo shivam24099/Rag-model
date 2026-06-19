@@ -1,7 +1,6 @@
 import streamlit as st
 import Rag
 
-
 st.title("AI Assistant", text_alignment="center")
 st.header("Hii! I am you ai assistant\n", text_alignment="center")
 st.header("ask me what you want", text_alignment="center")
@@ -25,17 +24,18 @@ with st.sidebar:
                 st.success("pdf uploaded successfully")
 
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
 
+
+if "messages" not in st.session_state:
+    st.session_state.messages = Rag.load_json()
 # showing old messages immediately
+
+
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
 
 question = st.chat_input("Ask your question")
-
-
 
 if question:
 
@@ -58,5 +58,7 @@ if question:
             "content":answer
         })
 
+    Rag.store_json(st.session_state.messages)
 
-
+if st.button("clear chat"):
+    st.session_state.messages = []

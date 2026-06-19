@@ -4,6 +4,8 @@ import chromadb
 import uuid
 from ollama import chat
 import os
+import json
+
 
 def clear():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -156,6 +158,7 @@ def generate_answer(question, history):
         "role":"user",
         "content" : f"""
         use provided context to answer the question
+        answer in a friendly ,conversational and empathatic manner
 
     context: {context},
 
@@ -213,6 +216,21 @@ Some of the limitations with the query_rewritting:
 
 """
     
+
+# persistent storing
+def store_json(history):
+    with open("history.json", "w") as f:
+        json.dump(history, f, indent=4)
+
+def load_json():
+
+    try:
+        with open("history.json", "r") as f:
+            return json.load(f)
+
+
+    except FileNotFoundError:
+        return []
 
 # text = read_pdf("ml notes.pdf")
 # words = text.split() # this is the actual text
