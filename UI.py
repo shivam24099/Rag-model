@@ -51,14 +51,24 @@ if question:
         answer = Rag.generate_answer(question, st.session_state.messages)
 
         with st.chat_message("assistant"):
-            st.write(answer)
+            st.write(answer["answer"])
 
         st.session_state.messages.append({
             "role":"assistant",
-            "content":answer
+            "content":answer["answer"]
         })
 
-    Rag.store_json(st.session_state.messages)
+    Rag.store_json(st.session_state.messages) 
+
+    with st.expander("source"):
+        source = {source["source"]
+                for source in answer["sources"]}
+        st.write(source)
 
 if st.button("clear chat"):
     st.session_state.messages = []
+    Rag.store_json([])
+    st.rerun()
+
+    
+

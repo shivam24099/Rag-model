@@ -174,7 +174,8 @@ def generate_answer(question, history):
             
     )
 
-    return response["message"]["content"]
+    return {"answer" : response["message"]["content"],
+            "sources": result["metadatas"][0]}
 
 
 def ask_question():
