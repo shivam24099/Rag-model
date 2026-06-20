@@ -1,4 +1,5 @@
 import Rag
+from sqlite_storage import create_chat, save_message
 
 # text = Rag.read_pdf("ml notes.pdf")
 
@@ -9,6 +10,8 @@ import Rag
 
 # Rag.store_chromadb(embeddings, chunks, "ml notes")
 Rag.ask_question()
+
+
 
 
 

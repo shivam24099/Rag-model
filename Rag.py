@@ -199,13 +199,15 @@ def ask_question():
             
             history.append({
                 "role":"assistant",
-                "content":response
+                "content":response["answer"]
                 })  
             print("\n\n")          
 
             print(response)
 
     clear()
+
+    
 
 """
 
