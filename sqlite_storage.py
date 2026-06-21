@@ -25,7 +25,7 @@ c = conn.cursor()
 
 # print(c.fetchall())
 
-def create_chat():
+def create_message_table():
     c.execute("""
               CREATE TABLE messages(
               message_id integer PRIMARY KEY AUTOINCREMENT,  

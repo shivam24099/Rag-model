@@ -5,6 +5,7 @@ import uuid
 from ollama import chat
 import os
 import json
+from sqlite_storage import save_message
 
 
 def clear():
@@ -180,9 +181,11 @@ def generate_answer(question, history):
 
 def ask_question():
     history = []
+    chat_id = int(input("Enter the chat id: "))
 
     while True:
         question = input(str("Ask what you want? S to stop"))
+        save_message(chat_id, "user", question)
 
 
         if (question.upper() == "S"):
@@ -191,6 +194,8 @@ def ask_question():
         
         else: 
             response = generate_answer(question, history)
+            save_message(chat_id, "assistant", response["answer"])
+
 
             history.append({
                 "role":"user",
