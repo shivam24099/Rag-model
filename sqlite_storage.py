@@ -1,6 +1,9 @@
 import sqlite3
 
-conn = sqlite3.connect('chat_storage.db')
+conn = sqlite3.connect(
+    "chat_storage.db",
+    check_same_thread=False
+)
 
 c = conn.cursor()
 
@@ -35,6 +38,9 @@ def create_message_table():
 
 
 def save_message(chat_id, role, content):
+    
+    conn = sqlite3.connect("chat_storage.db")
+    c = conn.cursor()
 
     c.execute(
         """
@@ -45,9 +51,57 @@ def save_message(chat_id, role, content):
     )
 
     conn.commit()
+    conn.close()
 
-def load_chat(chat_id):    
-    c.execute("SELECT * FROM messages WHERE chat_id=? ORDER BY message_id", (chat_id,))
-    print(c.fetchall())
+def load_chat(chat_id):  
+    conn = sqlite3.connect("chat_storage.db")
+    c = conn.cursor()
 
+    c.execute("SELECT role, content FROM messages WHERE chat_id=? ORDER BY message_id", (chat_id,))
+
+    rows = c.fetchall()
+
+    history = []
+
+    for role, content in rows:
+
+        history.append({
+            "role": role,
+            "content": content
+        })
+
+    conn.close()
+    return history
+
+def chat_table():
+    c.execute("""
+            CREATE TABLE chats (
+              chat_id integer PRIMARY KEY AUTOINCREMENT)""")
+
+def create_chat():
+    conn = sqlite3.connect("chat_storage.db")
+    c = conn.cursor()
+
+    c.execute("INSERT INTO chats DEFAULT VALUES")
+
+    conn.commit()
+
+    chat_id = c.lastrowid
+    conn.close()
+
+    return chat_id
+
+
+def get_all_chats():
+
+    conn = sqlite3.connect("chat_storage.db")
+    c = conn.cursor()
+
+    c.execute("SELECT chat_id FROM chats")
+
+    chats = [row[0] for row in c.fetchall()]
+
+    conn.close()
+
+    return chats
 
