@@ -1,6 +1,6 @@
 import streamlit as st
 import Rag
-from sqlite_storage import save_message, load_chat, create_chat, get_all_chats
+from sqlite_storage import save_message, load_chat, create_chat, get_all_chats, delete_chat
 
 st.title("AI Assistant", text_alignment="center")
 st.header("Hii! I am your ai assistant\n", text_alignment="center")
@@ -40,6 +40,15 @@ with st.sidebar:
         hist = load_chat(chat_id)
         st.session_state.messages = hist
         st.rerun()
+
+    if st.button("delete chat"):
+        delete_chat(chat_id)
+
+        st.session_state.chat_id = None
+        st.session_state.messages = []
+
+        st.rerun()
+
 
 
 

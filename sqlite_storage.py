@@ -105,3 +105,18 @@ def get_all_chats():
 
     return chats
 
+def delete_chat(chat_id):
+    conn = sqlite3.connect("chat_storage.db")
+    c = conn.cursor()
+
+    c.execute("""
+            DELETE FROM chats
+            WHERE chat_id =?""", (chat_id,))
+    
+    c.execute("""
+            DELETE FROM messages
+            WHERE chat_id =?""", (chat_id,))
+    
+    conn.commit()
+    
+    c.close
