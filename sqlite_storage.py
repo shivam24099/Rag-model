@@ -120,3 +120,18 @@ def delete_chat(chat_id):
     conn.commit()
     
     c.close
+
+def chat_exists(chat_id):
+    conn = sqlite3.connect("chat_storage.db")
+    c = conn.cursor()
+
+    c.execute(
+        "SELECT 1 FROM chats WHERE chat_id=?",
+        (chat_id,)
+    )
+
+    exists = c.fetchone() is not None
+
+    conn.close()
+
+    return exists

@@ -1,6 +1,7 @@
 import streamlit as st
 import Rag
 from sqlite_storage import save_message, load_chat, create_chat, get_all_chats, delete_chat
+import requests
 
 st.title("AI Assistant", text_alignment="center")
 st.header("Hii! I am your ai assistant\n", text_alignment="center")
@@ -27,7 +28,9 @@ with st.sidebar:
                 st.success("pdf uploaded successfully")
 
     if st.button("new chat"):
-        st.session_state.chat_id = create_chat()
+        response = requests.post("http://127.0.0.1:8000/chat")
+        st.session_state.chat_id = response.json()["chat_id"]
+
         st.session_state.messages = []
 
     st.write("Select chat:")
@@ -67,7 +70,12 @@ question = st.chat_input("Ask your question")
 
 if question:
     if st.session_state.chat_id is None:
-        st.session_state.chat_id = create_chat()
+        # st.session_state.chat_id = create_chat()
+
+        response = requests.post("http://127.0.0.1:8000/chat")
+
+        st.session_state.chat_id = response.json()["chat_id"]
+
 
     with st.chat_message("user"):
         st.write(question)
@@ -82,7 +90,17 @@ if question:
 
 
     with st.spinner("Processing answer"):
-        answer = Rag.generate_answer(question, st.session_state.messages)
+        
+        # answer = Rag.generate_answer(question, st.session_state.messages)
+
+        response = requests.post("http://127.0.0.1:8000/ask",
+                               json={
+                                   "question":question,
+                                   "history":st.session_state.messages
+                               })
+        answer = response.json()
+        
+    
 
         save_message(st.session_state.chat_id, "assistant", answer["answer"])
 
