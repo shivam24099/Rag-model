@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 import Rag
 from pydantic import BaseModel
 import sqlite_storage
@@ -19,21 +19,23 @@ def ask_question(question: Question):
     answer = Rag.generate_answer(question.question, question.history)
 
     return answer
-
-@app.post("/chat")
+# request a chat id
+@app.post("/chats")
 def get_chat():
     chat_id = sqlite_storage.create_chat()
 
-    return {"chat_id": chat_id}
+    return {"chatid": chat_id}
 
-@app.post("/chat/{chat_id}/message")
+ # saving the messages
+@app.post("/chats/{chat_id}/message")
 def save_message(chat_id: int, message: Messages):
     
     sqlite_storage.save_message(chat_id, message.role, message.content)
 
     return {"status" : "saved"}
 
-@app.get("/load-chat/{chat_id}")
+# loading previous chats
+@app.get("/chats/{chat_id}")
 def load_chat(chat_id: int):
 
     if not sqlite_storage.chat_exists(chat_id):
@@ -46,7 +48,7 @@ def load_chat(chat_id: int):
 
     return chats
 
-@app.delete("/delete-chat/{chat_id}")
+@app.delete("/chats/{chat_id}")
 def delete_chat_messages(chat_id):
     if not sqlite_storage.chat_exists(chat_id):
 
@@ -57,3 +59,24 @@ def delete_chat_messages(chat_id):
 
     sqlite_storage.delete_chat(chat_id)
     return {"status" : "deleted"}
+
+# for uploading thee pdf
+@app.post("/ingest")
+def upload(file: UploadFile = File(...)):
+    
+    if file.content_type != "application/pdf":
+        HTTPException(
+            status_code=400,
+            detail="only pdf files are allowed"
+        )
+
+    file.file.seek(0)
+    text = Rag.read_pdf(file.file)
+
+    words = text.split()
+    chunks = Rag.divide_chunk(words)
+    embedded_text = Rag.embedd_text(chunks)
+
+    Rag.store_chromadb(embedded_text, chunks, file.filename)
+
+    return {"status" : "pdf uploaded"}

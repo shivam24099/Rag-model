@@ -19,17 +19,30 @@ with st.sidebar:
 
         if st.button("Click to upload"):
             with st.spinner("uploading file..."):
-                text = Rag.read_pdf(uploaded_file)
-                words = text.split()
-                chunks = Rag.divide_chunk(words)
-                embeddings = Rag.embedd_text(chunks)
-                Rag.store_chromadb(embeddings, chunks, uploaded_file.name)
-
-                st.success("pdf uploaded successfully")
+                response = requests.post("http://127.0.0.1:8000/ingest",
+                                files={
+                                    "file": (
+                                        uploaded_file.name,
+                                        uploaded_file,
+                                        "application/pdf"
+                                    )
+                                }
+)
+                # text = Rag.read_pdf(uploaded_file)
+                # words = text.split()
+                # chunks = Rag.divide_chunk(words)
+                # embeddings = Rag.embedd_text(chunks)
+                # Rag.store_chromadb(embeddings, chunks, uploaded_file.name)
+                if response.status_code == 200:
+                    st.success("pdf uploaded successfully")
+                else:
+                    st.error("upload failed")
 
     if st.button("new chat"):
-        response = requests.post("http://127.0.0.1:8000/chat")
-        st.session_state.chat_id = response.json()["chat_id"]
+
+        response = requests.post("http://127.0.0.1:8000/chats")
+
+        st.session_state.chat_id = response.json()["chatid"]
 
         st.session_state.messages = []
 
@@ -40,8 +53,8 @@ with st.sidebar:
     )
 
     if st.button("Load Chat"):
-        hist = load_chat(chat_id)
-        st.session_state.messages = hist
+        response = requests.get(f"http://127.0.0.1:8000/chats/{chat_id}")
+        st.session_state.messages = response.json()
         st.rerun()
 
     if st.button("delete chat"):
@@ -72,9 +85,9 @@ if question:
     if st.session_state.chat_id is None:
         # st.session_state.chat_id = create_chat()
 
-        response = requests.post("http://127.0.0.1:8000/chat")
+        response = requests.post("http://127.0.0.1:8000/chats")
 
-        st.session_state.chat_id = response.json()["chat_id"]
+        st.session_state.chat_id = response.json()["chatid"]
 
 
     with st.chat_message("user"):
@@ -86,7 +99,14 @@ if question:
     })
 
 
-    save_message(st.session_state.chat_id, "user", question)
+    # save_message(st.session_state.chat_id, "user", question)
+
+    requests.post(f"http://127.0.0.1:8000/chat/{st.session_state.chat_id}/message",
+                  json={
+                      "role": "user",
+                      "content": question
+                  })
+    
 
 
     with st.spinner("Processing answer"):
@@ -102,7 +122,13 @@ if question:
         
     
 
-        save_message(st.session_state.chat_id, "assistant", answer["answer"])
+        # save_message(st.session_state.chat_id, "assistant", answer["answer"])
+
+        requests.post(f"http://127.0.0.1:8000/chat/{st.session_state.chat_id}/message",
+                  json={
+                      "role": "user",
+                      "content": answer["answer"]
+                  })
 
         with st.chat_message("assistant"):
             st.write(answer["answer"])
