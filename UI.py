@@ -2,6 +2,7 @@ import streamlit as st
 import Rag
 from sqlite_storage import save_message, load_chat, create_chat, get_all_chats, delete_chat
 import requests
+from speech import listen, transcribe
 
 st.title("AI Assistant", text_alignment="center")
 st.header("Hii! I am your ai assistant\n", text_alignment="center")
@@ -79,76 +80,94 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
 
-question = st.chat_input("Ask your question")
+prompt = st.chat_input("Ask your question", accept_audio=True)
 
-if question:
-    if st.session_state.chat_id is None:
-        # st.session_state.chat_id = create_chat()
+# voice_question = None
 
-        response = requests.post("http://127.0.0.1:8000/chats")
+# status = st.empty()
 
-        st.session_state.chat_id = response.json()["chatid"]
-
-
-    with st.chat_message("user"):
-        st.write(question)
-
-    st.session_state.messages.append({
-        "role":"user",
-        "content":question
-    })
-
-
-    # save_message(st.session_state.chat_id, "user", question)
-
-    requests.post(f"http://127.0.0.1:8000/chat/{st.session_state.chat_id}/message",
-                  json={
-                      "role": "user",
-                      "content": question
-                  })
+# with col2:
+#     if st.button("🎙️"):
+#         status.info("Listening 🎙️")
+#         voice_question = listen()
+#         status.success("finished")
     
 
+# question = typed_question or voice_question
 
-    with st.spinner("Processing answer"):
-        
-        # answer = Rag.generate_answer(question, st.session_state.messages)
+if prompt:
+    if prompt.audio:
+        question = transcribe(prompt.audio)
+    elif prompt.text:
+        question = prompt.text
 
-        response = requests.post("http://127.0.0.1:8000/ask",
-                               json={
-                                   "question":question,
-                                   "history":st.session_state.messages
-                               })
-        answer = response.json()
-        
-    
+    if question:
+        if st.session_state.chat_id is None:
+            # st.session_state.chat_id = create_chat()
 
-        # save_message(st.session_state.chat_id, "assistant", answer["answer"])
+            response = requests.post("http://127.0.0.1:8000/chats")
 
-        requests.post(f"http://127.0.0.1:8000/chat/{st.session_state.chat_id}/message",
-                  json={
-                      "role": "user",
-                      "content": answer["answer"]
-                  })
+            st.session_state.chat_id = response.json()["chatid"]
 
-        with st.chat_message("assistant"):
-            st.write(answer["answer"])
+
+        with st.chat_message("user"):
+            st.write(question)
 
         st.session_state.messages.append({
-            "role":"assistant",
-            "content":answer["answer"]
+            "role":"user",
+            "content":question
         })
 
-    Rag.store_json(st.session_state.messages) 
 
-    with st.expander("source"):
-        source = {source["source"]
-                for source in answer["sources"]}
-        st.write(source)
+        # save_message(st.session_state.chat_id, "user", question)
+
+        requests.post(f"http://127.0.0.1:8000/chats/{st.session_state.chat_id}/message",
+                    json={
+                        "role": "user",
+                        "content": question
+                    })
+        
+
+
+        with st.spinner("Processing answer"):
+            
+            # answer = Rag.generate_answer(question, st.session_state.messages)
+
+            response = requests.post("http://127.0.0.1:8000/ask",
+                                json={
+                                    "question":question,
+                                    "history":st.session_state.messages
+                                })
+            answer = response.json()
+            
+        
+
+            # save_message(st.session_state.chat_id, "assistant", answer["answer"])
+
+            requests.post(f"http://127.0.0.1:8000/chats/{st.session_state.chat_id}/message",
+                    json={
+                        "role": "assistant",
+                        "content": answer["answer"]
+                    })
+
+            with st.chat_message("assistant"):
+                st.write(answer["answer"])
+
+            st.session_state.messages.append({
+                "role":"assistant",
+                "content":answer["answer"]
+            })
+
+        Rag.store_json(st.session_state.messages) 
+
+        with st.expander("source"):
+            source = {source["source"]
+                    for source in answer["sources"]}
+            st.write(source)
 
 # if st.button("clear chat"):
 #     st.session_state.messages = []
 #     Rag.store_json([])
 #     st.rerun()
 
-    
 
